@@ -10,3 +10,6 @@ test:
 run:
 	go run main.go
 .PHONY: run
+
+bin:
+	go build -o karmabot_$(VERSION)

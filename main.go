@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -18,6 +19,9 @@ import (
 	"github.com/jdholdren/karma/internal/discserv"
 	"github.com/jdholdren/karma/internal/logging"
 )
+
+//go:embed migrate/*
+var f embed.FS
 
 func main() {
 	l := logging.NewLogger()
@@ -103,7 +107,7 @@ func setupDB(c config) (*sqlx.DB, error) {
 	}
 
 	// Perform migrations
-	ups, err := ioutil.ReadDir("./migrate")
+	ups, err := f.ReadDir("migrate")
 	if err != nil {
 		return nil, fmt.Errorf("error reading migration dir: %s", err)
 	}
