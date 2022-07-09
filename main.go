@@ -58,6 +58,7 @@ func main() {
 	}
 
 	s, err := discserv.New(
+		l.Named("discserv"),
 		discserv.Config{
 			Port:      cfg.Port,
 			VerifyKey: cfg.DiscordVerifyKey,

@@ -14,6 +14,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/mux"
 	"github.com/jdholdren/karma/internal/core"
+	"go.uber.org/zap"
 )
 
 type Config struct {
@@ -28,7 +29,7 @@ type Server struct {
 	key ed25519.PublicKey
 }
 
-func New(c Config, cr core.Core) (*Server, error) {
+func New(l *zap.SugaredLogger, c Config, cr core.Core) (*Server, error) {
 	r := mux.NewRouter()
 
 	keyBytes, err := hex.DecodeString(c.VerifyKey)
@@ -48,8 +49,23 @@ func New(c Config, cr core.Core) (*Server, error) {
 	}
 
 	r.HandleFunc("/interactions", s.handleDiscordInteraction()).Methods(http.MethodPost)
+	r.HandleFunc("/healthz", handleHealthCheck()).Methods(http.MethodGet)
+
+	r.Use(loggingMiddleware(l))
 
 	return s, nil
+}
+
+func loggingMiddleware(l *zap.SugaredLogger) mux.MiddlewareFunc {
+	// God i hate the nesting
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			l.Infow("request received", "uri", r.RequestURI, "method", r.Method)
+
+			// Call the next handler, which can be another middleware in the chain, or the final handler.
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // What Discord sends us
@@ -135,4 +151,8 @@ func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, id interactio
 	}
 	`, msg)
 	w.Write([]byte(resp))
+}
+
+func handleHealthCheck() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {}
 }
