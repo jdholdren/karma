@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -121,7 +120,7 @@ func setupDB(c config) (*sqlx.DB, error) {
 			continue
 		}
 
-		upBytes, err := ioutil.ReadFile(filepath.Join("./migrate", up.Name()))
+		upBytes, err := f.ReadFile(filepath.Join("migrate", up.Name()))
 		if err != nil {
 			return nil, fmt.Errorf("error reading up file: %s", err)
 		}
