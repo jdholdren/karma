@@ -11,5 +11,10 @@ run:
 	go run main.go
 .PHONY: run
 
-bin:
-	go build -o karmabot_$(VERSION)
+# Needed to properly compile the binary from mac/other os'es not linux
+compiler-image:
+	docker build . -t karma-compiler
+
+bin: compiler-image
+	docker run -v $(shell pwd):/karma karma-compiler
+.PHONY: bin
