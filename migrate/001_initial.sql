@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS `karma_counts` (
+	user_id TEXT PRIMARY KEY NOT NULL,
+	count INTEGER NOT NULL
+);
