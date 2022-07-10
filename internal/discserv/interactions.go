@@ -136,7 +136,7 @@ func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, id interactio
 		return
 	}
 
-	msg := fmt.Sprintf("You gave %s karma. Their total is now %d", username, count.Count)
+	msg := fmt.Sprintf("You gave @%s karma. Their total is now %d", username, count.Count)
 
 	w.Header().Add("Content-Type", "application/json")
 	resp := fmt.Sprintf(`
