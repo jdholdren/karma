@@ -128,15 +128,15 @@ func (s *Server) handlePing(w http.ResponseWriter) {
 }
 
 func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, id interactionData) {
-	username := id.Resolved.Users[id.Options[0].Value].Username
+	givenID := id.Options[0].Value
 
-	count, err := s.cr.AddKarma(r.Context(), id.Options[0].Value)
+	count, err := s.cr.AddKarma(r.Context(), givenID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error adding karma: %s", err), http.StatusInternalServerError)
 		return
 	}
 
-	msg := fmt.Sprintf("You gave <@%s> karma. Their total is now %d", username, count.Count)
+	msg := fmt.Sprintf("You gave <@%s> karma. Their total is now %d", givenID, count.Count)
 
 	w.Header().Add("Content-Type", "application/json")
 	resp := fmt.Sprintf(`
@@ -145,8 +145,7 @@ func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, id interactio
 		"data": {
 			"tts": false,
 			"content": "%s",
-			"embeds": [],
-			"allowed_mentions": { "parse": [] }
+			"embeds": []
 		}
 	}
 	`, msg)
