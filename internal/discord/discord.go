@@ -71,6 +71,12 @@ func (c *Client) RegisterCommands(ctx context.Context, guildID string) error {
 				Description: "The user to give karma to",
 				Required:    true,
 			},
+			{
+				Name:        "message",
+				Type:        3, // STRING
+				Description: "Message to accompany the gifting of karma",
+				Required:    true,
+			},
 		},
 	}
 
