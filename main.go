@@ -43,18 +43,18 @@ func main() {
 
 	cr := core.New(d)
 
-	// DEBUG: Register commands for now
+	// DEBUG: Register commands on start for now
 	dCli := discord.NewClient(
 		discord.ClientConfig{
-			AppID:   cfg.DiscordAppID,
-			GuildID: cfg.DiscordGuildID,
-			APIHost: cfg.DiscordAPIHost,
-			Token:   cfg.DiscordToken,
+			AppID: cfg.DiscordAppID,
+			Token: cfg.DiscordToken,
 		},
 		l.Named("discord_client"),
 	)
-	if err := dCli.RegisterCommands(context.Background()); err != nil {
-		l.Errorf("error registering commands: %s", err)
+	for _, guildID := range cfg.DiscordGuildIDs {
+		if err := dCli.RegisterCommands(context.Background(), guildID); err != nil {
+			l.Fatalf("error registering commands for guild '%s': %s", guildID, err)
+		}
 	}
 
 	s, err := discserv.New(
@@ -66,8 +66,7 @@ func main() {
 		cr,
 	)
 	if err != nil {
-		l.Errorw("error creating discord server", "err", err)
-		return
+		l.Fatalf("error creating discord server", "err", err)
 	}
 
 	if err := s.ListenAndServe(); err != nil {
@@ -84,11 +83,10 @@ type config struct {
 	DBPath string `env:"DB_PATH"`
 
 	// Discord stuffs
-	DiscordAPIHost   string `env:"DISCORD_API_HOST"`
-	DiscordToken     string `env:"DISCORD_TOKEN"`
-	DiscordAppID     string `env:"DISCORD_APP_ID"`
-	DiscordGuildID   string `env:"DISCORD_GUILD_ID"`
-	DiscordVerifyKey string `env:"DISCORD_VERIFY_KEY"`
+	DiscordToken     string   `env:"DISCORD_TOKEN"`
+	DiscordAppID     string   `env:"DISCORD_APP_ID"`
+	DiscordGuildIDs  []string `env:"DISCORD_GUILD_IDS"`
+	DiscordVerifyKey string   `env:"DISCORD_VERIFY_KEY"`
 }
 
 // Connects to the db and migrates it

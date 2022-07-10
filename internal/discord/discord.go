@@ -14,8 +14,6 @@ import (
 // Client is the struct that provides interactivity with discord
 type Client struct {
 	appID      string
-	guildID    string
-	apiHost    string
 	token      string // The secret token
 	httpClient *http.Client
 
@@ -23,19 +21,15 @@ type Client struct {
 }
 
 type ClientConfig struct {
-	AppID   string
-	GuildID string
-	APIHost string
-	Token   string
+	AppID string
+	Token string
 }
 
 // NewClient produces a new client with the given config
 func NewClient(c ClientConfig, l *zap.SugaredLogger) *Client {
 	return &Client{
-		appID:   c.AppID,
-		guildID: c.GuildID,
-		apiHost: c.APIHost,
-		token:   c.Token,
+		appID: c.AppID,
+		token: c.Token,
 		httpClient: &http.Client{
 			Timeout: 2 * time.Second,
 		},
@@ -64,7 +58,7 @@ type commandOption struct {
 }
 
 // RegisterCommands reaces out to discord to register all commands supported by the app
-func (c *Client) RegisterCommands(ctx context.Context) error {
+func (c *Client) RegisterCommands(ctx context.Context, guildID string) error {
 	// The give karma command
 	gib := command{
 		Name:        "gib",
@@ -86,13 +80,15 @@ func (c *Client) RegisterCommands(ctx context.Context) error {
 		return fmt.Errorf("error marshalling gib command: %s", err)
 	}
 
-	u := fmt.Sprintf("https://discord.com/api/v10/applications/%s/guilds/%s/commands", c.appID, c.guildID)
+	u := fmt.Sprintf("https://discord.com/api/v10/applications/%s/guilds/%s/commands", c.appID, guildID)
 	req, err := http.NewRequest(http.MethodPost, u, bytes.NewReader(byts))
 	if err != nil {
 		return fmt.Errorf("error creating request to create gib command: %s", err)
 	}
 	req = req.WithContext(ctx)
 	c.setupRequest(req)
+
+	c.l.Debugw("calling to register commands", "url", u)
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
@@ -107,6 +103,7 @@ func (c *Client) RegisterCommands(ctx context.Context) error {
 		}
 
 		c.l.Errorw("received error response from api", "err", er, "status_code", res.StatusCode)
+		return er
 	}
 
 	// DEBUG: Pull out the response and log it

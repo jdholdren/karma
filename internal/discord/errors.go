@@ -8,9 +8,8 @@ import (
 
 type errResp map[string]any
 
-type discordErr struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+func (er errResp) Error() string {
+	return fmt.Sprintf("%#v", er)
 }
 
 func readErr(r io.Reader) (errResp, error) {
