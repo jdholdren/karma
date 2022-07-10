@@ -119,6 +119,11 @@ func (s *Server) handleDiscordInteraction() http.HandlerFunc {
 			s.handleGib(w, r, i.Data)
 			return
 		}
+
+		if i.Type == 2 && i.Data.Name == "checkkarma" {
+			s.handleCheckKarma(w, r, i.Data)
+			return
+		}
 	}
 }
 
@@ -138,6 +143,32 @@ func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, id interactio
 	}
 
 	content := fmt.Sprintf("You gave <@%s> karma for '%s'. Their total is now %d", givenID, msg, count.Count)
+
+	w.Header().Add("Content-Type", "application/json")
+	resp := fmt.Sprintf(`
+	{
+		"type": 4,
+		"data": {
+			"tts": false,
+			"content": "%s",
+			"embeds": []
+		}
+	}
+	`, content)
+	w.Write([]byte(resp))
+}
+
+func (s *Server) handleCheckKarma(w http.ResponseWriter, r *http.Request, id interactionData) {
+	userID := id.Options[0].Value
+	username := id.Resolved.Users[id.Options[0].Value].Username
+
+	count, err := s.cr.GetKarma(r.Context(), userID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error checking karma: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	content := fmt.Sprintf("Checked %s's karma. Their total is %d", username, count.Count)
 
 	w.Header().Add("Content-Type", "application/json")
 	resp := fmt.Sprintf(`

@@ -59,29 +59,53 @@ type commandOption struct {
 
 // RegisterCommands reaces out to discord to register all commands supported by the app
 func (c *Client) RegisterCommands(ctx context.Context, guildID string) error {
-	// The give karma command
-	gib := command{
-		Name:        "gib",
-		Type:        1, // CHAT_INPUT
-		Description: "Give another user one karma",
-		Options: []commandOption{
-			{
-				Name:        "user",
-				Type:        6, // USER
-				Description: "The user to give karma to",
-				Required:    true,
+	cmds := []command{
+		{
+			Name:        "gib",
+			Type:        1, // CHAT_INPUT
+			Description: "Give another user one karma",
+			Options: []commandOption{
+				{
+					Name:        "user",
+					Type:        6, // USER
+					Description: "The user to give karma to",
+					Required:    true,
+				},
+				{
+					Name:        "message",
+					Type:        3, // STRING
+					Description: "Message to accompany the gifting of karma",
+					Required:    true,
+				},
 			},
-			{
-				Name:        "message",
-				Type:        3, // STRING
-				Description: "Message to accompany the gifting of karma",
-				Required:    true,
+		},
+		{
+			Name:        "checkkarma",
+			Type:        1, // CHAT_INPUT
+			Description: "Check a user's karma",
+			Options: []commandOption{
+				{
+					Name:        "user",
+					Type:        6, // USER
+					Description: "The user to check",
+					Required:    true,
+				},
 			},
 		},
 	}
 
-	// TODO: Pull out the api interaction
-	byts, err := json.Marshal(gib)
+	// The give karma command
+	for _, cmd := range cmds {
+		if err := c.registerCommand(ctx, cmd, guildID); err != nil {
+			return fmt.Errorf("error registering command %s: %s", cmd.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) registerCommand(ctx context.Context, cmd command, guildID string) error {
+	byts, err := json.Marshal(cmd)
 	if err != nil {
 		return fmt.Errorf("error marshalling gib command: %s", err)
 	}
@@ -112,14 +136,7 @@ func (c *Client) RegisterCommands(ctx context.Context, guildID string) error {
 		return er
 	}
 
-	// DEBUG: Pull out the response and log it
-	// TODO: Make a struct for this
-	resM := map[string]any{}
-	if err := json.NewDecoder(res.Body).Decode(&resM); err != nil {
-		return fmt.Errorf("error reading from response body: %s", err)
-	}
-
-	c.l.Infow("sucessfully called to register global commands", "res", resM)
+	c.l.Infow("sucessfully called to register guild command", "command_name", cmd.Name)
 
 	return nil
 }
