@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"log"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -24,7 +25,11 @@ var f embed.FS
 
 func main() {
 	l := logging.NewLogger()
-	defer l.Sync()
+	defer func() {
+		if err := l.Sync(); err != nil {
+			log.Fatalf("error syncing logger: %s", err)
+		}
+	}()
 
 	l.Debug("parsing config...")
 	var cfg config
