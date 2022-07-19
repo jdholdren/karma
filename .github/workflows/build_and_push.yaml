@@ -9,6 +9,9 @@ jobs:
       contents: read
     steps:
     - uses: actions/checkout@v2
+    - name: Set output
+      id: vars
+      run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
     - uses: actions/setup-go@v2
       with:
         go-version: 1.18
@@ -20,3 +23,7 @@ jobs:
       with:
         workload_identity_provider: 'projects/${{ secrets.PROJECT_ID_NUM }}/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
         service_account: '${{ secrets.SERVICE_ACCOUNT }}'
+    - name: Move binary to GCS
+      run: gsutil mv karmabot ${{ secrets.DESTINATION }}/karmabot_$VERSION
+      env:
+        VERSION: ${{ steps.vars.outputs.tag }}
