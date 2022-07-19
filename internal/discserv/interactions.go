@@ -60,6 +60,11 @@ func loggingMiddleware(l *zap.SugaredLogger) mux.MiddlewareFunc {
 	// God i hate the nesting
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.RequestURI == "/healthz" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			l.Infow("request received", "uri", r.RequestURI, "method", r.Method)
 
 			// Call the next handler, which can be another middleware in the chain, or the final handler.
@@ -129,7 +134,22 @@ func (s *Server) handleDiscordInteraction() http.HandlerFunc {
 
 func (s *Server) handlePing(w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/json")
-	w.Write([]byte(`{ "type": 1 }`))
+	_, _ = w.Write([]byte(`{ "type": 1 }`))
+}
+
+func writeMsgResponse(w http.ResponseWriter, message string) {
+	w.Header().Add("Content-Type", "application/json")
+	resp := fmt.Sprintf(`
+	{
+		"type": 4,
+		"data": {
+			"tts": false,
+			"content": "%s",
+			"embeds": []
+		}
+	}
+	`, message)
+	_, _ = w.Write([]byte(resp))
 }
 
 func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, id interactionData) {
@@ -143,19 +163,7 @@ func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, id interactio
 	}
 
 	content := fmt.Sprintf("You gave <@%s> karma for '%s'. Their total is now %d", givenID, msg, count.Count)
-
-	w.Header().Add("Content-Type", "application/json")
-	resp := fmt.Sprintf(`
-	{
-		"type": 4,
-		"data": {
-			"tts": false,
-			"content": "%s",
-			"embeds": []
-		}
-	}
-	`, content)
-	w.Write([]byte(resp))
+	writeMsgResponse(w, content)
 }
 
 func (s *Server) handleCheckKarma(w http.ResponseWriter, r *http.Request, id interactionData) {
@@ -169,19 +177,7 @@ func (s *Server) handleCheckKarma(w http.ResponseWriter, r *http.Request, id int
 	}
 
 	content := fmt.Sprintf("Checked %s's karma. Their total is %d", username, count.Count)
-
-	w.Header().Add("Content-Type", "application/json")
-	resp := fmt.Sprintf(`
-	{
-		"type": 4,
-		"data": {
-			"tts": false,
-			"content": "%s",
-			"embeds": []
-		}
-	}
-	`, content)
-	w.Write([]byte(resp))
+	writeMsgResponse(w, content)
 }
 
 func handleHealthCheck() http.HandlerFunc {
