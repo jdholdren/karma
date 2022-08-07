@@ -74,7 +74,13 @@ func main() {
 		l.Fatalf("error creating discord server", "err", err)
 	}
 
-	if err := s.ListenAndServe(); err != nil {
+	if cfg.TLSCertFile != "" && cfg.TLSKeyFile != "" {
+		err = s.ListenAndServeTLS(cfg.TLSCertFile, cfg.TLSKeyFile)
+	} else {
+		err = s.ListenAndServe()
+	}
+
+	if err != nil {
 		l.Errorw("error while serving", "err", err)
 		return
 	}
@@ -82,7 +88,9 @@ func main() {
 
 type config struct {
 	// Server
-	Port int `env:"PORT"`
+	Port        int    `env:"PORT"`
+	TLSCertFile string `env:"TLS_CERT_FILE"`
+	TLSKeyFile  string `env:"TLS_KEY_FILE"`
 
 	// Database
 	DBPath string `env:"DB_PATH"`
