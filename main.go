@@ -48,17 +48,18 @@ func main() {
 
 	cr := core.New(d)
 
-	// DEBUG: Register commands on start for now
-	dCli := discord.NewClient(
-		discord.ClientConfig{
-			AppID: cfg.DiscordAppID,
-			Token: cfg.DiscordToken,
-		},
-		l.Named("discord_client"),
-	)
-	for _, guildID := range cfg.DiscordGuildIDs {
-		if err := dCli.RegisterCommands(context.Background(), guildID); err != nil {
-			l.Fatalf("error registering commands for guild '%s': %s", guildID, err)
+	if !cfg.SkipRegister {
+		dCli := discord.NewClient(
+			discord.ClientConfig{
+				AppID: cfg.DiscordAppID,
+				Token: cfg.DiscordToken,
+			},
+			l.Named("discord_client"),
+		)
+		for _, guildID := range cfg.DiscordGuildIDs {
+			if err := dCli.RegisterCommands(context.Background(), guildID); err != nil {
+				l.Fatalf("error registering commands for guild '%s': %s", guildID, err)
+			}
 		}
 	}
 
@@ -100,6 +101,8 @@ type config struct {
 	DiscordAppID     string   `env:"DISCORD_APP_ID"`
 	DiscordGuildIDs  []string `env:"DISCORD_GUILD_IDS"`
 	DiscordVerifyKey string   `env:"DISCORD_VERIFY_KEY"`
+	// If we should not try to register commands with discord
+	SkipRegister bool `env:"SKIP_REGISTER"`
 }
 
 // Connects to the db and migrates it
