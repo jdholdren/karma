@@ -14,6 +14,6 @@ jobs:
     - name: Build container
       run: make build
     - name: Tag container
-      run: docker tag karmabot:latest ghcr.io/jdholdren/karmabot:${{ github.event.release.tag_name }}
+      run: docker tag karmabot:latest ghcr.io/jdholdren/karmabot:${{ github.ref_name }}
     - name: Push container
-      run: docker push ghcr.io/jdholdren/karmabot:${{ github.event.release.tag_name }}
+      run: docker push ghcr.io/jdholdren/karmabot:${{ github.ref_name }}
