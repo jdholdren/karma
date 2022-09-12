@@ -3,6 +3,8 @@ ifneq (,${KARMA_DOTENV})
 	export
 endif
 
+COMMIT_SHA="$(shell git rev-parse --short HEAD)"
+
 test:
 	go test ./...
 .PHONY: test
@@ -11,10 +13,5 @@ run:
 	go run main.go
 .PHONY: run
 
-# Needed to properly compile the binary from mac/other os'es not linux
-compiler-image:
-	docker build . -t karma-compiler
-
-bin: compiler-image
-	docker run -v $(shell pwd):/karma karma-compiler
-.PHONY: bin
+build:
+	docker build . -t karmabot:latest

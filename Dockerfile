@@ -1,11 +1,13 @@
-FROM golang:1.18
+FROM golang:1.18 AS builder
 
-ARG VERSION
+WORKDIR /karma
 
-WORKDIR /karma/
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
 
-ENV CGO_ENABLED=1
-ENV GOOS=linux
-ENV GOARCH=amd64
+COPY . .
 
-ENTRYPOINT ["go", "build", "-o", "karmabot"]
+RUN CGO_ENABLED=1 go build -o /karmabot .
+
+CMD ["/karmabot"]
