@@ -92,6 +92,19 @@ func (c *Client) RegisterCommands(ctx context.Context, guildID string) error {
 				},
 			},
 		},
+		{
+			Name:        "checktop",
+			Type:        1, // CHAT_INPUT
+			Description: "Check the top karma recipients",
+			Options: []commandOption{
+				{
+					Name:        "number",
+					Type:        4, // INTEGER
+					Description: "The number of top recipients to return",
+					Required:    true,
+				},
+			},
+		},
 	}
 
 	// The give karma command

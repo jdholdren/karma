@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jdholdren/karma/internal/core/models"
 	"github.com/jmoiron/sqlx"
+
+	"github.com/jdholdren/karma/internal/core/models"
 )
 
 // A DB struct holds the connection to sqlite and provides methods for interacting with
@@ -43,4 +44,17 @@ func (db DB) GetKarmaCount(ctx context.Context, userID string) (models.KarmaCoun
 	}
 
 	return kc, nil
+}
+
+func (db DB) TopCounts(ctx context.Context, n int64) ([]models.KarmaCount, error) {
+	q := `
+	SELECT * FROM karma_counts ORDER BY count DESC LIMIT ?;
+	`
+
+	kcs := []models.KarmaCount{}
+	if err := db.db.SelectContext(ctx, &kcs, q, n); err != nil {
+		return nil, fmt.Errorf("error querying top karma counts: %s", err)
+	}
+
+	return kcs, nil
 }

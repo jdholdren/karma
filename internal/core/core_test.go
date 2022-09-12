@@ -12,7 +12,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 
 	coredb "github.com/jdholdren/karma/internal/core/db"
 	"github.com/jdholdren/karma/internal/core/models"
@@ -28,6 +28,10 @@ func removeDB() {
 	os.Remove("../../test.sqlite")
 	os.Remove("../../test.sqlite-shm")
 	os.Remove("../../test.sqlite-wal")
+}
+
+func truncDB() {
+	sqlxDB.Exec("DELETE FROM karma_counts;")
 }
 
 func TestMain(t *testing.M) {
@@ -90,6 +94,7 @@ func TestMain(t *testing.M) {
 }
 
 func TestIncrementKarma(t *testing.T) {
+	truncDB()
 	ctx := context.Background()
 
 	_, err := cr.AddKarma(ctx, "user-1")
@@ -112,4 +117,54 @@ func TestIncrementKarma(t *testing.T) {
 		Count:  2,
 	}
 	assert.Equal(t, want, got)
+}
+
+func TestTopCounts(t *testing.T) {
+	truncDB()
+	ctx := context.Background()
+
+	_, err := cr.AddKarma(ctx, "user-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	_, err = cr.AddKarma(ctx, "user-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	_, err = cr.AddKarma(ctx, "user-2")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	got, err := cr.TopCounts(ctx, 10)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	want := []models.KarmaCount{
+		{
+			UserID: "user-1",
+			Count:  2,
+		},
+		{
+			UserID: "user-2",
+			Count:  1,
+		},
+	}
+	assert.Equal(t, want, got)
+}
+
+func TestTopCounts_RequiresNumInRange(t *testing.T) {
+	ctx := context.Background()
+	var valErr ValidationErr
+
+	_, err := cr.TopCounts(ctx, -1)
+	assert.ErrorAs(t, err, &valErr)
+	assert.Equal(t, "num", valErr.Field)
+
+	_, err = cr.TopCounts(ctx, 11)
+	assert.ErrorAs(t, err, &valErr)
+	assert.Equal(t, "num", valErr.Field)
 }

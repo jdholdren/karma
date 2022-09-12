@@ -8,6 +8,15 @@ import (
 	"github.com/jdholdren/karma/internal/core/models"
 )
 
+type ValidationErr struct {
+	Field string
+	Msg   string
+}
+
+func (err ValidationErr) Error() string {
+	return fmt.Sprintf("error with '%s': %s", err.Field, err.Msg)
+}
+
 type Core struct {
 	db db.DB
 }
@@ -39,4 +48,21 @@ func (c Core) GetKarma(ctx context.Context, userID string) (models.KarmaCount, e
 	}
 
 	return count, nil
+}
+
+func (c Core) TopCounts(ctx context.Context, n int64) ([]models.KarmaCount, error) {
+	// Don't let them check more than 10
+	if n > 10 || n < 1 {
+		return nil, ValidationErr{
+			Field: "num",
+			Msg:   "must provide valid number between 1 and 10",
+		}
+	}
+
+	counts, err := c.db.TopCounts(ctx, n)
+	if err != nil {
+		return nil, fmt.Errorf("error getting top db counts: %s", err)
+	}
+
+	return counts, nil
 }

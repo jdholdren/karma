@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"crypto/ed25519"
@@ -173,6 +174,24 @@ func (s *Server) handleCheckKarma(w http.ResponseWriter, r *http.Request, id int
 	count, err := s.cr.GetKarma(r.Context(), userID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error checking karma: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	content := fmt.Sprintf("Checked %s's karma. Their total is %d", username, count.Count)
+	writeMsgResponse(w, content)
+}
+
+func (s *Server) handleLeaderboard(w http.ResponseWriter, r *http.Request, id interactionData) {
+	numVal := id.Options[0].Value
+	num, err := strconv.ParseInt(numVal, 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("invalid integer provided: %s", numVal), http.StatusBadRequest)
+		return
+	}
+
+	count, err := s.cr.TopCounts(r.Context(), num)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error checking leaderboard: %s", err), http.StatusInternalServerError)
 		return
 	}
 
