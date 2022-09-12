@@ -10,3 +10,5 @@ jobs:
       run: make build
     - name: Tag container
       run: docker tag karmabot:latest ghcr.io/jdholdren/karmabot:${{ github.sha }}
+    - name: Push container
+      run: docker push ghcr.io/jdholdren/karmabot:${{ github.sha }}
