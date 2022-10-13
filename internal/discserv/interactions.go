@@ -23,6 +23,7 @@ type Config struct {
 }
 
 type Server struct {
+	l *zap.SugaredLogger
 	*http.Server
 
 	cr  core.Core
@@ -38,6 +39,7 @@ func New(l *zap.SugaredLogger, c Config, cr core.Core) (*Server, error) {
 	}
 
 	s := &Server{
+		l: l,
 		Server: &http.Server{
 			Addr:         fmt.Sprintf(":%d", c.Port),
 			Handler:      r,
@@ -158,9 +160,12 @@ func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, id interactio
 
 	count, err := s.cr.AddKarma(r.Context(), givenID)
 	if err != nil {
+		s.l.Errorw("error adding karma", "err", err)
 		http.Error(w, fmt.Sprintf("error adding karma: %s", err), http.StatusInternalServerError)
 		return
 	}
+
+	s.l.Infow("sucessfully added karma", "given_to", givenID)
 
 	content := fmt.Sprintf("You gave <@%s> karma for '%s'. Their total is now %d", givenID, msg, count.Count)
 	writeMsgResponse(w, content)
@@ -172,9 +177,12 @@ func (s *Server) handleCheckKarma(w http.ResponseWriter, r *http.Request, id int
 
 	count, err := s.cr.GetKarma(r.Context(), userID)
 	if err != nil {
+		s.l.Errorw("error checking karma", "err", err)
 		http.Error(w, fmt.Sprintf("error checking karma: %s", err), http.StatusInternalServerError)
 		return
 	}
+
+	s.l.Infow("sucessfully checked karma", "username", username)
 
 	content := fmt.Sprintf("Checked %s's karma. Their total is %d", username, count.Count)
 	writeMsgResponse(w, content)
