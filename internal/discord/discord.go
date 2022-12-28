@@ -92,6 +92,11 @@ func (c *Client) RegisterCommands(ctx context.Context, guildID string) error {
 				},
 			},
 		},
+		{
+			Name:        "topten",
+			Type:        1, // CHAT_INPUT
+			Description: "Check the karma leaderboard",
+		},
 	}
 
 	// The give karma command

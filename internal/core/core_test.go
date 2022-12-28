@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
-	"gotest.tools/assert"
 
 	coredb "github.com/jdholdren/karma/internal/core/db"
 	"github.com/jdholdren/karma/internal/core/models"
@@ -28,6 +28,12 @@ func removeDB() {
 	os.Remove("../../test.sqlite")
 	os.Remove("../../test.sqlite-shm")
 	os.Remove("../../test.sqlite-wal")
+}
+
+func truncateDB(t *testing.T) {
+	if _, err := sqlxDB.Exec("DELETE FROM karma_counts;"); err != nil {
+		t.Fatalf("unexpected error")
+	}
 }
 
 func TestMain(t *testing.M) {
@@ -91,25 +97,70 @@ func TestMain(t *testing.M) {
 
 func TestIncrementKarma(t *testing.T) {
 	ctx := context.Background()
+	truncateDB(t)
 
-	_, err := cr.AddKarma(ctx, "user-1")
+	_, err := cr.AddKarma(ctx, "guild-1", "user-1")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	_, err = cr.AddKarma(ctx, "user-1")
+	_, err = cr.AddKarma(ctx, "guild-1", "user-1")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	got, err := cr.GetKarma(ctx, "user-1")
+	got, err := cr.GetKarma(ctx, "guild-1", "user-1")
 	if err != nil {
 		t.Fatalf("unexpected error getting karma: %s", err)
 	}
 
 	want := models.KarmaCount{
-		UserID: "user-1",
-		Count:  2,
+		UserID:  "user-1",
+		GuildID: "guild-1",
+		Count:   2,
 	}
-	assert.Equal(t, want, got)
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("GetKarma() mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestTopTen(t *testing.T) {
+	ctx := context.Background()
+	truncateDB(t)
+
+	_, err := cr.AddKarma(ctx, "guild-1", "user-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	_, err = cr.AddKarma(ctx, "guild-1", "user-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	_, err = cr.AddKarma(ctx, "guild-1", "user-2")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	got, err := cr.GetTopCounts(ctx, "guild-1", 10)
+	if err != nil {
+		t.Fatalf("unexpected error getting leaderboard: %s", err)
+	}
+
+	want := []models.KarmaCount{
+		{
+			UserID:  "user-1",
+			GuildID: "guild-1",
+			Count:   2,
+		},
+		{
+			UserID:  "user-2",
+			GuildID: "guild-1",
+			Count:   1,
+		},
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("GetTopCounts() mismatch (-want +got):\n%s", diff)
+	}
 }
