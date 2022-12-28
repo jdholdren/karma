@@ -12,6 +12,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/sethvargo/go-envconfig"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/jdholdren/karma/internal/core"
 	"github.com/jdholdren/karma/internal/core/db"
@@ -75,6 +76,8 @@ func main() {
 		l.Fatalf("error creating discord server", "err", err)
 	}
 
+	l.Infof("serving on port %d", cfg.Port)
+
 	if cfg.TLSCertFile != "" && cfg.TLSKeyFile != "" {
 		err = s.ListenAndServeTLS(cfg.TLSCertFile, cfg.TLSKeyFile)
 	} else {
@@ -103,6 +106,17 @@ type config struct {
 	DiscordVerifyKey string   `env:"DISCORD_VERIFY_KEY"`
 	// If we should not try to register commands with discord
 	SkipRegister bool `env:"SKIP_REGISTER"`
+}
+
+func (c config) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddInt("port", c.Port)
+	enc.AddString("db_path", c.DBPath)
+	enc.AddString("tls_cert_file", c.TLSCertFile)
+	enc.AddString("tls_key_file", c.TLSKeyFile)
+	enc.AddString("discord_app_id", c.DiscordAppID)
+	enc.AddBool("skip_register", c.SkipRegister)
+
+	return nil
 }
 
 // Connects to the db and migrates it

@@ -5,6 +5,7 @@ package models
 
 // A KarmaCount is a counter for karma attached to a user
 type KarmaCount struct {
-	UserID string `db:"user_id"`
-	Count  uint   `db:"count"`
+	GuildID string `db:"guild_id"`
+	UserID  string `db:"user_id"`
+	Count   uint   `db:"count"`
 }

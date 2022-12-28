@@ -1,4 +1,6 @@
 CREATE TABLE IF NOT EXISTS `karma_counts` (
-	user_id TEXT PRIMARY KEY NOT NULL,
-	count INTEGER NOT NULL
+  guild_id TEXT NOT NULL,
+	user_id TEXT NOT NULL,
+	count INTEGER NOT NULL,
+  PRIMARY KEY(guild_id, user_id)
 );

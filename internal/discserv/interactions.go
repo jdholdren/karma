@@ -77,9 +77,10 @@ func loggingMiddleware(l *zap.SugaredLogger) mux.MiddlewareFunc {
 
 // What Discord sends us
 type interaction struct {
-	Type  uint            `json:"type"`
-	Data  interactionData `json:"data"`
-	Token string          `json:"token"`
+	Type    uint            `json:"type"`
+	Data    interactionData `json:"data"`
+	GuildID string          `json:"guild_id"`
+	Token   string          `json:"token"`
 }
 
 type interactionData struct {
@@ -105,16 +106,22 @@ type interactionUser struct {
 
 func (s *Server) handleDiscordInteraction() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		l := s.l.With("method", "handleDiscordInteraction")
+
 		if !discordgo.VerifyInteraction(r, s.key) {
+			l.Debug("verification failed")
 			http.Error(w, "invalid signature", http.StatusUnauthorized)
 			return
 		}
 
 		var i interaction
 		if err := json.NewDecoder(r.Body).Decode(&i); err != nil {
+			l.Errorw("error decoding", "err", err)
 			http.Error(w, fmt.Sprintf("error decoding: %s", err), http.StatusBadRequest)
 			return
 		}
+
+		l.Infow("interaction decoded", "interaction", i)
 
 		// Determine which handler to use
 		if i.Type == 1 {
@@ -123,12 +130,12 @@ func (s *Server) handleDiscordInteraction() http.HandlerFunc {
 		}
 
 		if i.Type == 2 && i.Data.Name == "gib" {
-			s.handleGib(w, r, i.Data)
+			s.handleGib(w, r, i)
 			return
 		}
 
 		if i.Type == 2 && i.Data.Name == "checkkarma" {
-			s.handleCheckKarma(w, r, i.Data)
+			s.handleCheckKarma(w, r, i)
 			return
 		}
 	}
@@ -154,11 +161,12 @@ func writeMsgResponse(w http.ResponseWriter, message string) {
 	_, _ = w.Write([]byte(resp))
 }
 
-func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, id interactionData) {
-	givenID := id.Options[0].Value
-	msg := id.Options[1].Value
+func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, i interaction) {
+	guildID := i.GuildID
+	givenID := i.Data.Options[0].Value
+	msg := i.Data.Options[1].Value
 
-	count, err := s.cr.AddKarma(r.Context(), givenID)
+	count, err := s.cr.AddKarma(r.Context(), guildID, givenID)
 	if err != nil {
 		s.l.Errorw("error adding karma", "err", err)
 		http.Error(w, fmt.Sprintf("error adding karma: %s", err), http.StatusInternalServerError)
@@ -171,11 +179,11 @@ func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, id interactio
 	writeMsgResponse(w, content)
 }
 
-func (s *Server) handleCheckKarma(w http.ResponseWriter, r *http.Request, id interactionData) {
-	userID := id.Options[0].Value
-	username := id.Resolved.Users[id.Options[0].Value].Username
+func (s *Server) handleCheckKarma(w http.ResponseWriter, r *http.Request, i interaction) {
+	userID := i.Data.Options[0].Value
+	username := i.Data.Resolved.Users[i.Data.Options[0].Value].Username
 
-	count, err := s.cr.GetKarma(r.Context(), userID)
+	count, err := s.cr.GetKarma(r.Context(), i.GuildID, userID)
 	if err != nil {
 		s.l.Errorw("error checking karma", "err", err)
 		http.Error(w, fmt.Sprintf("error checking karma: %s", err), http.StatusInternalServerError)
