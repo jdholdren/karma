@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"crypto/ed25519"
@@ -138,6 +139,11 @@ func (s *Server) handleDiscordInteraction() http.HandlerFunc {
 			s.handleCheckKarma(w, r, i)
 			return
 		}
+
+		if i.Type == 2 && i.Data.Name == "topten" {
+			s.handleLeaderboard(w, r, i)
+			return
+		}
 	}
 }
 
@@ -146,9 +152,9 @@ func (s *Server) handlePing(w http.ResponseWriter) {
 	_, _ = w.Write([]byte(`{ "type": 1 }`))
 }
 
-func writeMsgResponse(w http.ResponseWriter, message string) {
-	w.Header().Add("Content-Type", "application/json")
-	resp := fmt.Sprintf(`
+const (
+	// A body with mentions
+	mentionBody = `
 	{
 		"type": 4,
 		"data": {
@@ -157,7 +163,29 @@ func writeMsgResponse(w http.ResponseWriter, message string) {
 			"embeds": []
 		}
 	}
-	`, message)
+	`
+	mentionlessBody = `
+	{
+		"type": 4,
+		"data": {
+			"tts": false,
+			"content": "%s",
+			"embeds": [],
+			"allowed_mentions": {
+				"parse": []
+			}
+		}
+	}
+	`
+)
+
+func writeMsgResponse(w http.ResponseWriter, message string, allowMentions bool) {
+	w.Header().Add("Content-Type", "application/json")
+	body := mentionBody
+	if !allowMentions {
+		body = mentionlessBody
+	}
+	resp := fmt.Sprintf(body, message)
 	_, _ = w.Write([]byte(resp))
 }
 
@@ -176,7 +204,7 @@ func (s *Server) handleGib(w http.ResponseWriter, r *http.Request, i interaction
 	s.l.Infow("sucessfully added karma", "given_to", givenID)
 
 	content := fmt.Sprintf("You gave <@%s> karma for '%s'. Their total is now %d", givenID, msg, count.Count)
-	writeMsgResponse(w, content)
+	writeMsgResponse(w, content, true)
 }
 
 func (s *Server) handleCheckKarma(w http.ResponseWriter, r *http.Request, i interaction) {
@@ -193,7 +221,23 @@ func (s *Server) handleCheckKarma(w http.ResponseWriter, r *http.Request, i inte
 	s.l.Infow("sucessfully checked karma", "username", username)
 
 	content := fmt.Sprintf("Checked %s's karma. Their total is %d", username, count.Count)
-	writeMsgResponse(w, content)
+	writeMsgResponse(w, content, false)
+}
+
+func (s *Server) handleLeaderboard(w http.ResponseWriter, r *http.Request, i interaction) {
+	counts, err := s.cr.GetTopCounts(r.Context(), i.GuildID, 10)
+	if err != nil {
+		s.l.Errorw("error checking leaderboard", "err", err)
+		http.Error(w, fmt.Sprintf("error checking leaderboard: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	b := &strings.Builder{}
+	for j, count := range counts {
+		b.WriteString(fmt.Sprintf("%d. <@%s>: %d karma \\n", j+1, count.UserID, count.Count))
+	}
+
+	writeMsgResponse(w, b.String(), false)
 }
 
 func handleHealthCheck() http.HandlerFunc {
