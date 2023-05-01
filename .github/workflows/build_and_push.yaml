@@ -25,7 +25,7 @@ jobs:
         skip-pkg-cache: true
     # Building the binary and drafting a release
     - name: Build binary
-      run: CGO_ENABLED=1 go build -o /karmabot .
+      run: 'CGO_ENABLED=1 go build -o /karmabot .'
     - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
