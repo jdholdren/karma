@@ -27,7 +27,7 @@ jobs:
     - name: Build binary
       env:
       - CGO_ENABLED=1
-      run: go build -o /karmabot .
+      run: "go build -o /karmabot ."
     - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
