@@ -23,7 +23,6 @@ jobs:
         args: --tests=f
         skip-go-installation: true
         skip-pkg-cache: true
-    # Building the binary and drafting a release
     - name: Build binary
       run: make build
     - uses: "marvinpinto/action-automatic-releases@latest"
