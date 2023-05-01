@@ -18,7 +18,7 @@ jobs:
     - name: Linter Check
       uses: golangci/golangci-lint-action@v2
       with:
-        version: v1.45
+        version: v1.52.2
         args: --tests=f
         skip-go-installation: true
         skip-pkg-cache: true
