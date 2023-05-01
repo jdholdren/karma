@@ -12,6 +12,3 @@ test:
 run:
 	go run main.go
 .PHONY: run
-
-build:
-	CGO_ENABLED=1 go build -o /karmabot .

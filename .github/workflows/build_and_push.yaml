@@ -13,7 +13,6 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.20'
-    # Make sure that we don't build releases that don't pass checks
     - name: Run Tests
       run: make test
     - name: Linter Check
@@ -24,11 +23,11 @@ jobs:
         skip-go-installation: true
         skip-pkg-cache: true
     - name: Build binary
-      run: make build
+      run: CGO_ENABLED=1 go build -o /karmabot .
     - uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          draft: true
-          files: |
-            LICENSE
-            karmabot
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        draft: true
+        files: |
+          LICENSE
+          karmabot
