@@ -14,4 +14,4 @@ run:
 .PHONY: run
 
 build:
-	docker build . -t karmabot:latest
+	CGO_ENABLED=1 go build -o /karmabot .
