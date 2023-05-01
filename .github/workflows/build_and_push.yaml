@@ -9,11 +9,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Docker login
-      run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u USERNAME --password-stdin
-    - name: Build container
-      run: make build
-    - name: Tag container
-      run: docker tag karmabot:latest ghcr.io/jdholdren/karmabot:${{ github.ref_name }}
-    - name: Push container
-      run: docker push ghcr.io/jdholdren/karmabot:${{ github.ref_name }}
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+    # Make sure that we don't build releases that don't pass checks
+    - name: Run Tests
+      run: make test
+    - name: Linter Check
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.45
+        args: --tests=f
+        skip-go-installation: true
+        skip-pkg-cache: true
+    # Building the binary and drafting a release
+    - name: Build binary
+      run: |
+        CGO_ENABLED=1 go build -o /karmabot .
+    - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          draft: true
+          files: |
+            LICENSE
+            karmabot
