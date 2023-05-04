@@ -18,7 +18,7 @@ server.
 Here's are the env vars your server will need set:
 
 | Name | Value |
-----------------
+| ----- | ---------- |
 | `PORT` | What port the server should listen on |
 | `TLS_CERT_FILE` | Cert for TLS. If you're going to put the server _behind_ an
 HTTPS connection then you can omit this and it will server just HTTP. But
