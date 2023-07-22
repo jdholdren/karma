@@ -56,15 +56,17 @@ func New(l *zap.SugaredLogger, c Config, cr core.Core) (*Server, error) {
 	}
 
 	if c.TLSCertFile != "" && c.TLSKeyFile != "" { // TLS key/cert provided
-		s.TLSConfig = &tls.Config{
-			GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-				cert, err := tls.LoadX509KeyPair(c.TLSCertFile, c.TLSKeyFile)
-				if err != nil {
-					return nil, fmt.Errorf("error loading keypair for cert: %s", err)
-				}
+		l.Debug("setting up tls")
+		loadKeyPair := func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+			cert, err := tls.LoadX509KeyPair(c.TLSCertFile, c.TLSKeyFile)
+			if err != nil {
+				return nil, fmt.Errorf("error loading keypair for cert: %s", err)
+			}
 
-				return &cert, nil
-			},
+			return &cert, nil
+		}
+		s.TLSConfig = &tls.Config{
+			GetCertificate: loadKeyPair,
 		}
 	}
 
