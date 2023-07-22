@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"crypto/ed25519"
+	"crypto/tls"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/mux"
@@ -21,6 +22,9 @@ import (
 type Config struct {
 	Port      int
 	VerifyKey string
+
+	TLSCertFile string
+	TLSKeyFile  string
 }
 
 type Server struct {
@@ -28,7 +32,7 @@ type Server struct {
 	*http.Server
 
 	cr  core.Core
-	key ed25519.PublicKey
+	key ed25519.PublicKey // The discord public key to verify requests from them
 }
 
 func New(l *zap.SugaredLogger, c Config, cr core.Core) (*Server, error) {
@@ -49,6 +53,19 @@ func New(l *zap.SugaredLogger, c Config, cr core.Core) (*Server, error) {
 		},
 		cr:  cr,
 		key: ed25519.PublicKey(keyBytes),
+	}
+
+	if c.TLSCertFile != "" && c.TLSKeyFile != "" { // TLS key/cert provided
+		s.TLSConfig = &tls.Config{
+			GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+				cert, err := tls.LoadX509KeyPair(c.TLSCertFile, c.TLSKeyFile)
+				if err != nil {
+					return nil, fmt.Errorf("error loading keypair for cert: %s", err)
+				}
+
+				return &cert, nil
+			},
+		}
 	}
 
 	r.HandleFunc("/interactions", s.handleDiscordInteraction()).Methods(http.MethodPost)

@@ -78,15 +78,8 @@ func main() {
 
 	l.Infof("serving on port %d", cfg.Port)
 
-	if cfg.TLSCertFile != "" && cfg.TLSKeyFile != "" {
-		err = s.ListenAndServeTLS(cfg.TLSCertFile, cfg.TLSKeyFile)
-	} else {
-		err = s.ListenAndServe()
-	}
-
-	if err != nil {
+	if err := s.ListenAndServe(); err != nil {
 		l.Errorw("error while serving", "err", err)
-		return
 	}
 }
 
