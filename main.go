@@ -67,8 +67,10 @@ func main() {
 	s, err := discserv.New(
 		l.Named("discserv"),
 		discserv.Config{
-			Port:      cfg.Port,
-			VerifyKey: cfg.DiscordVerifyKey,
+			Port:        cfg.Port,
+			VerifyKey:   cfg.DiscordVerifyKey,
+			TLSCertFile: cfg.TLSCertFile,
+			TLSKeyFile:  cfg.TLSKeyFile,
 		},
 		cr,
 	)
@@ -78,15 +80,8 @@ func main() {
 
 	l.Infof("serving on port %d", cfg.Port)
 
-	if cfg.TLSCertFile != "" && cfg.TLSKeyFile != "" {
-		err = s.ListenAndServeTLS(cfg.TLSCertFile, cfg.TLSKeyFile)
-	} else {
-		err = s.ListenAndServe()
-	}
-
-	if err != nil {
+	if err := s.ListenAndServe(); err != nil {
 		l.Errorw("error while serving", "err", err)
-		return
 	}
 }
 
