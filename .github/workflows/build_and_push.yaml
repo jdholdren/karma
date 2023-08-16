@@ -12,23 +12,16 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.20'
+        go-version: '1.21'
     - name: Build binary
       run: CGO_ENABLED=0 go build -o karmabot .
-
-    - name: Docker login
-      run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u USERNAME --password-stdin
-    - name: Build container
-      run: make docker
-    - name: Tag container
-      run: docker tag karmabot:latest ghcr.io/jdholdren/karmabot:${{ github.ref_name }}
-    - name: Push container
-      run: docker push ghcr.io/jdholdren/karmabot:${{ github.ref_name }}
-
+    - name: Build arm binary
+      run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -o karmabot_armv7 .
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
           LICENSE
           karmabot
+          karmabot_armv7
         draft: true

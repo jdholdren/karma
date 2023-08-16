@@ -12,7 +12,3 @@ test:
 run:
 	go run main.go
 .PHONY: run
-
-docker:
-	docker build . -t karmabot:latest
-.PHONY: docker
