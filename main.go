@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/zap/zapcore"
+	_ "modernc.org/sqlite"
 
 	"github.com/jdholdren/karma/internal/core"
 	"github.com/jdholdren/karma/internal/core/db"
@@ -128,7 +128,7 @@ func setupDB(c config) (*sqlx.DB, error) {
 	q.Add("_journal", "WAL")
 	u.RawQuery = q.Encode()
 
-	db, err := sqlx.Open("sqlite3", u.String())
+	db, err := sqlx.Open("sqlite", u.String())
 	if err != nil {
 		return nil, fmt.Errorf("error opening db: %s", err)
 	}
