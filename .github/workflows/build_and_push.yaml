@@ -17,7 +17,7 @@ jobs:
       run: CGO_ENABLED=0 go build -o karmabot .
 
     - name: Build container
-      run: make build
+      run: make docker
     - name: Tag container
       run: docker tag karmabot:latest ghcr.io/jdholdren/karmabot:${{ github.ref_name }}
     - name: Push container
@@ -29,5 +29,4 @@ jobs:
         files: |
           LICENSE
           karmabot
-          karmabot_armv7
         draft: true
