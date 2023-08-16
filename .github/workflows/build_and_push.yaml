@@ -15,8 +15,14 @@ jobs:
         go-version: '1.20'
     - name: Build binary
       run: CGO_ENABLED=0 go build -o karmabot .
-    - name: Build arm binary
-      run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -o karmabot_armv7 .
+
+    - name: Build container
+      run: make build
+    - name: Tag container
+      run: docker tag karmabot:latest ghcr.io/jdholdren/karmabot:${{ github.ref_name }}
+    - name: Push container
+      run: docker push ghcr.io/jdholdren/karmabot:${{ github.ref_name }}
+
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
