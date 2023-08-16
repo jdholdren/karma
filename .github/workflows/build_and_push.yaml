@@ -16,6 +16,8 @@ jobs:
     - name: Build binary
       run: CGO_ENABLED=0 go build -o karmabot .
 
+    - name: Docker login
+      run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u USERNAME --password-stdin
     - name: Build container
       run: make docker
     - name: Tag container
