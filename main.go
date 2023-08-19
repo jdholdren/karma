@@ -1,3 +1,14 @@
+/*
+Karma runs a Discord webhook server that responds to commands to
+keep a tally per person.
+
+It takes in no flags but multiple environment variables that are documented
+in the README. It will not serve TLS by default, but can be enabled if a
+cert and key file are provided.
+
+It's backed by a SQLite DB, but does not reqire CGO to compile. There are migrations
+in the repo that are run on startup before the server listens to connections.
+*/
 package main
 
 import (
