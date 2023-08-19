@@ -1,5 +1,7 @@
 # Karma
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/jdholdren/karma.svg)](https://pkg.go.dev/github.com/jdholdren/karma)
+
 Karma is a webhook server for adding "karma points" to a set of discord servers.
 When registered with your Discord server, it will add the following commands:
 
